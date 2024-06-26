@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import { useUserStore } from "@/stores/user"
+import { getAuth, signOut } from "firebase/auth"
+import { useRouter } from "vue-router"
 
+const router = useRouter()
 const userStore = useUserStore()
 
 const itemsRightMenu = computed<IMenuItem[]>(() => {
@@ -68,9 +71,22 @@ const itemsMainMenu = computed<IMenuItem[]>(() => {
 })
 
 const clickOnMenu = (item: IMenuItem): void => {
-  if (item.id === MenuItemIDs.logout) {
-    userStore.userId = ""
+  switch (item.id) {
+    case MenuItemIDs.login:
+      signInMethod()
+      break
+    case MenuItemIDs.logout:
+      signOutMethod()
+      break
   }
+}
+
+const signOutMethod = async (): Promise<void> => {
+  await signOut(getAuth())
+  router.push("/auth")
+}
+const signInMethod = (): void => {
+  router.push("/auth")
 }
 </script>
 
