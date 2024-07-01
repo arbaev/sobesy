@@ -14,6 +14,7 @@ import InputText from "primevue/inputtext"
 import Toast from "primevue/toast"
 import ToastService from "primevue/toastservice"
 import ProgressSpinner from "primevue/progressspinner"
+import Card from "primevue/card"
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -35,5 +36,6 @@ app.component("AppButton", Button)
 app.component("AppInputText", InputText)
 app.component("AppToast", Toast)
 app.component("AppProgress", ProgressSpinner)
+app.component("AppCard", Card)
 
 app.mount("#app")
