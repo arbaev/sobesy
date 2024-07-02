@@ -15,6 +15,10 @@ import Toast from "primevue/toast"
 import ToastService from "primevue/toastservice"
 import ProgressSpinner from "primevue/progressspinner"
 import Card from "primevue/card"
+import DataTable from "primevue/datatable"
+import Column from "primevue/column"
+import ConfirmDialog from "primevue/confirmdialog"
+import ConfirmationService from "primevue/confirmationservice"
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -30,6 +34,7 @@ app.use(PrimeVue, {
 app.use(router)
 app.use(pinia)
 app.use(ToastService)
+app.use(ConfirmationService)
 
 app.component("AppMenubar", Menubar)
 app.component("AppButton", Button)
@@ -37,5 +42,8 @@ app.component("AppInputText", InputText)
 app.component("AppToast", Toast)
 app.component("AppProgress", ProgressSpinner)
 app.component("AppCard", Card)
+app.component("AppDataTable", DataTable)
+app.component("AppColumn", Column)
+app.component("AppDialog", ConfirmDialog)
 
 app.mount("#app")

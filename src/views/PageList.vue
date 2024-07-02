@@ -4,7 +4,9 @@ import { getFirestore, collection, query, orderBy, getDocs, deleteDoc, doc, wher
 import { useUserStore } from "@/stores/user"
 import { type IInterview } from "@/interfaces"
 import { useToast } from "primevue/usetoast"
+import { useConfirm } from "primevue/useconfirm"
 
+const confirm = useConfirm()
 const toast = useToast()
 
 const userStore = useUserStore()
@@ -13,7 +15,28 @@ const db = getFirestore()
 const interviews = ref<IInterview[]>([])
 const isLoading = ref<boolean>(true)
 
-const getInterviews = async <T extends IInterview>(): Promise<T[] | []> => {
+const confirmRemoveInterview = async (id: string): Promise<void> => {
+  confirm.require({
+    header: "Удаление собеседований",
+    message: "Вы точно хотите удалить собеседование?",
+    icon: "pi pi-info-circle",
+    rejectLabel: "Отмена",
+    acceptLabel: "Удалить",
+    rejectClass: "p-button-secondary p-button-outlined",
+    acceptClass: "p-button-danger",
+    accept: async () => {
+      isLoading.value = true
+      await deleteDoc(doc(db, `users/${userStore.userId}/interviews`, id))
+
+      const listIntervies: Array<IInterview> = await getAllInterviews()
+      interviews.value = [...listIntervies]
+
+      isLoading.value = false
+    },
+  })
+}
+
+const getAllInterviews = async <T extends IInterview>(): Promise<T[] | []> => {
   try {
     const q = query(collection(db, `users/${userStore.userId}/interviews`), orderBy("createdAt", "desc"))
     const querySnapshot = await getDocs(q)
@@ -28,14 +51,118 @@ const getInterviews = async <T extends IInterview>(): Promise<T[] | []> => {
 }
 
 onMounted(async () => {
-  const listInterviews: Array<IInterview> = await getInterviews()
+  const listInterviews: Array<IInterview> = await getAllInterviews()
   interviews.value = [...listInterviews]
   isLoading.value = false
 })
 </script>
 
 <template>
-  <div>{{ interviews }}</div>
+  <app-dialog />
+  <h1>Список собеседований</h1>
+  <app-data-table :value="interviews">
+    <app-column field="company" header="Компания"></app-column>
+    <app-column field="hrName" header="Имя HR"></app-column>
+    <app-column field="vacancyLink" header="Вакансия">
+      <template #body="slotProps">
+        <a :href="slotProps.data.vacancyLink" target="_blank">Ссылка на вакансию</a>
+      </template>
+    </app-column>
+    <app-column header="Контакты">
+      <template #body="slotProps">
+        <div class="contacts">
+          <a
+            v-if="slotProps.data.contactTelegram"
+            :href="`https://t.me/${slotProps.data.contactTelegram}`"
+            target="_blank"
+            class="contacts__telegram"
+          >
+            <span class="contacts__icon pi pi-telegram"></span>
+          </a>
+          <a
+            v-if="slotProps.data.contactWhatsApp"
+            :href="`https://wa.me/${slotProps.data.contactWhatsApp}`"
+            target="_blank"
+            class="contacts__whatsapp"
+          >
+            <span class="contacts__icon pi pi-whatsapp"></span>
+          </a>
+          <a
+            v-if="slotProps.data.contactPhone"
+            :href="`https://tel:${slotProps.data.contactPhone}`"
+            target="_blank"
+            class="contacts__phone"
+          >
+            <span class="contacts__icon pi pi-phone"></span>
+          </a>
+          <div v-else>Контактов нет</div>
+        </div>
+      </template>
+    </app-column>
+    <app-column header="Пройденные этапы">
+      <template #body="slotProps">
+        <span v-if="!slotProps.data.stages">Не заполнено</span>
+        <div v-else class="interview-stages">
+          <app-badge
+            v-for="(stage, i) in slotProps.data.stages"
+            :key="i"
+            :value="i + 1"
+            rounded
+            v-tooltip.top="stage.name"
+          />
+        </div>
+      </template>
+    </app-column>
+    <app-column header="Зарплатная вилка">
+      <template #body="slotProps">
+        <span v-if="!slotProps.data.salaryFrom">Не заполнено</span>
+        <span v-else>{{ slotProps.data.salaryFrom }} - {{ slotProps.data.salaryTo }}</span>
+      </template>
+    </app-column>
+    <app-column header="Результат">
+      <template #body="slotProps">
+        <span v-if="!slotProps.data.result">Не заполнено</span>
+        <template v-else>
+          <app-badge
+            :severity="slotProps.data.result === 'Offer' ? 'success' : 'danger'"
+            :value="slotProps.data.result === 'Offer' ? 'Оффер' : 'Отказ'"
+          />
+        </template>
+      </template>
+    </app-column>
+    <app-column>
+      <template #body="slotProps">
+        <div class="flex gap-2">
+          <router-link :to="`/interview/${slotProps.data.id}`">
+            <app-button icon="pi pi-pencil" severity="info" />
+          </router-link>
+          <app-button icon="pi pi-trash" severity="danger" @click="confirmRemoveInterview(slotProps.data.id)" />
+        </div>
+      </template>
+    </app-column>
+  </app-data-table>
 </template>
 
-<style scoped></style>
+<style scoped>
+.contacts {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.contacts__telegram {
+  color: #0088cc;
+}
+.contacts__whatsapp {
+  color: #25d366;
+}
+.contacts__phone {
+  color: #371777;
+}
+.contacts__icon {
+  font-size: 20px;
+}
+.interview-stages {
+  display: flex;
+  gap: 5px;
+}
+</style>
