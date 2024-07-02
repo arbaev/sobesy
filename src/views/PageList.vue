@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue"
-import { getFirestore, collection, query, orderBy, getDocs, deleteDoc, doc, where } from "firebase/firestore"
+import { getFirestore, collection, query, orderBy, getDocs, deleteDoc, doc } from "firebase/firestore"
 import { useUserStore } from "@/stores/user"
 import { type IInterview } from "@/interfaces"
 import { useToast } from "primevue/usetoast"
@@ -28,8 +28,7 @@ const confirmRemoveInterview = async (id: string): Promise<void> => {
       isLoading.value = true
       await deleteDoc(doc(db, `users/${userStore.userId}/interviews`, id))
 
-      const listIntervies: Array<IInterview> = await getAllInterviews()
-      interviews.value = [...listIntervies]
+      interviews.value = await getAllInterviews()
 
       isLoading.value = false
     },
@@ -52,95 +51,69 @@ const getAllInterviews = async <T extends IInterview>(): Promise<T[] | []> => {
 
 onMounted(async () => {
   const listInterviews: Array<IInterview> = await getAllInterviews()
-  interviews.value = [...listInterviews]
+  interviews.value = listInterviews
   isLoading.value = false
 })
 </script>
 
 <template>
   <app-dialog />
-  <h1>Список собеседований</h1>
-  <app-data-table :value="interviews">
-    <app-column field="company" header="Компания"></app-column>
-    <app-column field="hrName" header="Имя HR"></app-column>
-    <app-column field="vacancyLink" header="Вакансия">
-      <template #body="slotProps">
-        <a :href="slotProps.data.vacancyLink" target="_blank">Ссылка на вакансию</a>
+  <div>
+    <h1>Список собеседований</h1>
+    <app-data-table :value="interviews" :loading="isLoading">
+      <template #empty>
+        <div class="text-center"><em> Интервью пока нет </em></div>
       </template>
-    </app-column>
-    <app-column header="Контакты">
-      <template #body="slotProps">
-        <div class="contacts">
-          <a
-            v-if="slotProps.data.contactTelegram"
-            :href="`https://t.me/${slotProps.data.contactTelegram}`"
-            target="_blank"
-            class="contacts__telegram"
-          >
-            <span class="contacts__icon pi pi-telegram"></span>
-          </a>
-          <a
-            v-if="slotProps.data.contactWhatsApp"
-            :href="`https://wa.me/${slotProps.data.contactWhatsApp}`"
-            target="_blank"
-            class="contacts__whatsapp"
-          >
-            <span class="contacts__icon pi pi-whatsapp"></span>
-          </a>
-          <a
-            v-if="slotProps.data.contactPhone"
-            :href="`https://tel:${slotProps.data.contactPhone}`"
-            target="_blank"
-            class="contacts__phone"
-          >
-            <span class="contacts__icon pi pi-phone"></span>
-          </a>
-          <div v-else>Контактов нет</div>
-        </div>
-      </template>
-    </app-column>
-    <app-column header="Пройденные этапы">
-      <template #body="slotProps">
-        <span v-if="!slotProps.data.stages">Не заполнено</span>
-        <div v-else class="interview-stages">
-          <app-badge
-            v-for="(stage, i) in slotProps.data.stages"
-            :key="i"
-            :value="i + 1"
-            rounded
-            v-tooltip.top="stage.name"
-          />
-        </div>
-      </template>
-    </app-column>
-    <app-column header="Зарплатная вилка">
-      <template #body="slotProps">
-        <span v-if="!slotProps.data.salaryFrom">Не заполнено</span>
-        <span v-else>{{ slotProps.data.salaryFrom }} - {{ slotProps.data.salaryTo }}</span>
-      </template>
-    </app-column>
-    <app-column header="Результат">
-      <template #body="slotProps">
-        <span v-if="!slotProps.data.result">Не заполнено</span>
-        <template v-else>
-          <app-badge
-            :severity="slotProps.data.result === 'Offer' ? 'success' : 'danger'"
-            :value="slotProps.data.result === 'Offer' ? 'Оффер' : 'Отказ'"
-          />
+      <app-column field="company" header="Компания"></app-column>
+      <app-column field="hrName" header="Имя HR"></app-column>
+      <app-column field="vacancyLink" header="Вакансия">
+        <template #body="{ data }">
+          <a :href="data.vacancyLink" target="_blank">{{ data.vacancyLink }}</a>
         </template>
-      </template>
-    </app-column>
-    <app-column>
-      <template #body="slotProps">
-        <div class="flex gap-2">
-          <router-link :to="`/interview/${slotProps.data.id}`">
-            <app-button icon="pi pi-pencil" severity="info" />
-          </router-link>
-          <app-button icon="pi pi-trash" severity="danger" @click="confirmRemoveInterview(slotProps.data.id)" />
-        </div>
-      </template>
-    </app-column>
-  </app-data-table>
+      </app-column>
+      <app-column header="Контакты">
+        <template #body="{ data }">
+          <div class="contacts">
+            <a
+              v-if="data.contactTelegram"
+              :href="`https://t.me/${data.contactTelegram}`"
+              target="_blank"
+              class="contacts__telegram"
+            >
+              <span class="contacts__icon pi pi-telegram"></span>
+            </a>
+            <a
+              v-if="data.contactWhatsApp"
+              :href="`https://wa.me/${data.contactWhatsApp}`"
+              target="_blank"
+              class="contacts__whatsapp"
+            >
+              <span class="contacts__icon pi pi-whatsapp"></span>
+            </a>
+            <a
+              v-if="data.contactPhone"
+              :href="`https://tel:${data.contactPhone}`"
+              target="_blank"
+              class="contacts__phone"
+            >
+              <span class="contacts__icon pi pi-phone"></span>
+            </a>
+            <span v-else>Контакты не заполнены</span>
+          </div>
+        </template>
+      </app-column>
+      <app-column>
+        <template #body="{ data }">
+          <div class="flex gap-2">
+            <router-link :to="{ name: 'Interview', params: { id: data.id } }">
+              <app-button icon="pi pi-pencil" severity="info" />
+            </router-link>
+            <app-button icon="pi pi-trash" severity="danger" @click="confirmRemoveInterview(data.id)" />
+          </div>
+        </template>
+      </app-column>
+    </app-data-table>
+  </div>
 </template>
 
 <style scoped>
