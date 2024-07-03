@@ -68,7 +68,7 @@ onMounted(async () => {
       <app-column field="hrName" header="Имя HR"></app-column>
       <app-column field="vacancyLink" header="Вакансия">
         <template #body="{ data }">
-          <a :href="data.vacancyLink" target="_blank">{{ data.vacancyLink }}</a>
+          <a :href="data.vacancyLink" target="_blank">Ссылка на вакансию</a>
         </template>
       </app-column>
       <app-column header="Контакты">
@@ -102,6 +102,34 @@ onMounted(async () => {
           </div>
         </template>
       </app-column>
+      <app-column header="Этапы">
+        <template #body="{ data }">
+          <span v-if="!data.stages">Не заполнено</span>
+          <div v-else class="interview-stages">
+            <app-badge v-for="(stage, i) in data.stages" :key="i" :value="i + 1" rounded v-tooltip.top="stage.name" />
+          </div>
+        </template>
+      </app-column>
+
+      <app-column header="Зарплатная вилка">
+        <template #body="{ data }">
+          <span v-if="!data.salaryFrom">Не заполнено</span>
+          <span v-else>{{ data.salaryFrom }}&ndash;{{ data.salaryTo }}</span>
+        </template>
+      </app-column>
+
+      <app-column header="Результат">
+        <template #body="{ data }">
+          <span v-if="!data.result">Не заполнено</span>
+          <template v-else>
+            <app-badge
+              :severity="data.result === 'Offer' ? 'success' : 'danger'"
+              :value="data.result === 'Offer' ? 'Оффер' : 'Отказ'"
+            />
+          </template>
+        </template>
+      </app-column>
+
       <app-column>
         <template #body="{ data }">
           <div class="flex gap-2">
