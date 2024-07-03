@@ -19,6 +19,10 @@ import DataTable from "primevue/datatable"
 import Column from "primevue/column"
 import ConfirmDialog from "primevue/confirmdialog"
 import ConfirmationService from "primevue/confirmationservice"
+import InputNumber from "primevue/inputnumber"
+import Textarea from "primevue/textarea"
+import DatePicker from "primevue/datepicker"
+import RadioButton from "primevue/radiobutton"
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -45,5 +49,9 @@ app.component("AppCard", Card)
 app.component("AppDataTable", DataTable)
 app.component("AppColumn", Column)
 app.component("AppDialog", ConfirmDialog)
+app.component("AppInputNumber", InputNumber)
+app.component("AppTextarea", Textarea)
+app.component("AppDatePicker", DatePicker)
+app.component("AppRadioButton", RadioButton)
 
 app.mount("#app")
