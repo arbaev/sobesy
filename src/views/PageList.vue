@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue"
-import { getFirestore, collection, query, orderBy, getDocs, deleteDoc, doc } from "firebase/firestore"
+import { getFirestore, collection, query, orderBy, getDocs, deleteDoc, doc, where } from "firebase/firestore"
 import { useUserStore } from "@/stores/user"
 import { type IInterview } from "@/interfaces"
 import { useToast } from "primevue/usetoast"
@@ -13,6 +13,7 @@ const userStore = useUserStore()
 const db = getFirestore()
 
 const interviews = ref<IInterview[]>([])
+const selectedFilterResult = ref<IInterview["result"] | "">("")
 const isLoading = ref<boolean>(true)
 
 const confirmRemoveInterview = async (id: string): Promise<void> => {
@@ -35,9 +36,16 @@ const confirmRemoveInterview = async (id: string): Promise<void> => {
   })
 }
 
-const getAllInterviews = async <T extends IInterview>(): Promise<T[] | []> => {
+const getAllInterviews = async <T extends IInterview>(options?: { filterResults: boolean }): Promise<T[] | []> => {
   try {
-    const q = query(collection(db, `users/${userStore.userId}/interviews`), orderBy("createdAt", "desc"))
+    const interviewsCollection = collection(db, `users/${userStore.userId}/interviews`)
+    let q
+    if (options?.filterResults) {
+      q = query(interviewsCollection, where("result", "==", selectedFilterResult.value), orderBy("createdAt", "desc"))
+    } else {
+      q = query(interviewsCollection, orderBy("createdAt", "desc"))
+    }
+
     const querySnapshot = await getDocs(q)
 
     return querySnapshot.docs.map((doc) => doc.data() as T)
@@ -47,6 +55,21 @@ const getAllInterviews = async <T extends IInterview>(): Promise<T[] | []> => {
     }
     return []
   }
+}
+
+const submitFilter = async (): Promise<void> => {
+  isLoading.value = true
+  const listInterviews: Array<IInterview> = await getAllInterviews({ filterResults: true })
+  interviews.value = listInterviews
+  isLoading.value = false
+}
+
+const clearFilter = async (): Promise<void> => {
+  selectedFilterResult.value = ""
+  isLoading.value = true
+  const listIntervies: Array<IInterview> = await getAllInterviews()
+  interviews.value = listIntervies
+  isLoading.value = false
 }
 
 onMounted(async () => {
@@ -60,6 +83,21 @@ onMounted(async () => {
   <app-dialog />
   <div>
     <h1>Список собеседований</h1>
+    <div class="flex align-items-center mb-5">
+      <div class="flex align-items-center mr-2">
+        <span class="mr-2">Фильтры:</span>
+        <app-radio-button inputId="interviewResult1" name="result" value="Refusal" v-model="selectedFilterResult" />
+        <label for="interviewResult1" class="ml-2">Отказ</label>
+      </div>
+      <div class="flex align-items-center mr-2">
+        <app-radio-button inputId="interviewResult2" name="result" value="Offer" v-model="selectedFilterResult" />
+        <label for="interviewResult2" class="ml-2">Оффер</label>
+      </div>
+      <app-button class="mr-2" @click="submitFilter" :disabled="!selectedFilterResult" outlined>Применить</app-button>
+      <app-button severity="danger" :disabled="!selectedFilterResult" @click="clearFilter" outlined
+        >Сбросить</app-button
+      >
+    </div>
     <app-data-table :value="interviews" :loading="isLoading">
       <template #empty>
         <div class="text-center"><em> Интервью пока нет </em></div>
