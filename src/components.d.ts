@@ -14,6 +14,7 @@ import Textarea from "primevue/textarea"
 import DatePicker from "primevue/datepicker"
 import RadioButton from "primevue/radiobutton"
 import Badge from "primevue/badge"
+import Chart from "primevue/chart"
 
 declare module "vue" {
   export interface GlobalComponents {
@@ -31,5 +32,6 @@ declare module "vue" {
     AppDatePicker: typeof DatePicker
     AppRadioButton: typeof RadioButton
     AppBadge: typeof Badge
+    AppChart: typeof Chart
   }
 }

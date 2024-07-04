@@ -25,6 +25,7 @@ import DatePicker from "primevue/datepicker"
 import RadioButton from "primevue/radiobutton"
 import Badge from "primevue/badge"
 import Tooltip from "primevue/tooltip"
+import Chart from "primevue/chart"
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -58,5 +59,6 @@ app.component("AppTextarea", Textarea)
 app.component("AppDatePicker", DatePicker)
 app.component("AppRadioButton", RadioButton)
 app.component("AppBadge", Badge)
+app.component("AppChart", Chart)
 
 app.mount("#app")
